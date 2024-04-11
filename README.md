@@ -1,0 +1,2 @@
+# Re-Play CORE
+This repository will only hold some docker scripts so we can temporarily test a mass deploy before separating the different services into their own deployments. It also manages the dependencies of the project in this case.
