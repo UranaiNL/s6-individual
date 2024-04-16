@@ -50,3 +50,10 @@ profile-service/
 replay-service/
 subscription-service/
 upload-service
+
+## Ignoring the databases
+/mongo-profile-data/
+/mongo-replay-data/
+/mongo-subscription-data/
+/postgres_keycloak_data/
+/postgres-game/

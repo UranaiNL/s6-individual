@@ -1,6 +1,89 @@
-version: '3'
+version: '3.7'
 
 services:
+  ## MySQL Docker Compose Config
+  postgres-game:
+    container_name: postgres-game
+    image: postgres
+    environment:
+      POSTGRES_DB: game-service
+      POSTGRES_USER: uranai
+      POSTGRES_PASSWORD: password
+      PGDATA: /data/postgres
+    volumes:
+      - ./postgres-game:/data/postgres
+    expose:
+      - "5431"
+    ports:
+      - "5431:5431"
+    command: -p 5431
+    restart: always
+
+  ## Mongo Docker Compose Config
+  mongo-replay:
+    container_name: mongo-replay
+    image: mongo:4.4.14-rc0-focal
+    restart: always
+    ports:
+      - "27017:27017"
+    expose:
+      - "27017"
+    volumes:
+      - ./mongo-replay-data:/data/db
+
+  mongo-profile:
+    container_name: mongo-profile
+    image: mongo:4.4.14-rc0-focal
+    restart: always
+    ports:
+      - "27018:27017"
+    expose:
+      - "27018"
+    volumes:
+      - ./mongo-profile-data:/data/db
+
+  mongo-subscription:
+    container_name: mongo-subscription
+    image: mongo:4.4.14-rc0-focal
+    restart: always
+    ports:
+      - "27019:27017"
+    expose:
+      - "27019"
+    volumes:
+      - ./mongo-subscription-data:/data/db
+
+  ## Keycloak Config with Mysql database
+  ## MySQL Docker Compose Config
+  keycloak-db:
+    image: postgres
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password
+    volumes:
+      - ./postgres_keycloak_data:/var/lib/postgres
+
+  keycloak:
+    container_name: keycloak
+    image: quay.io/keycloak/keycloak:24.0.2
+    command: [ "start-dev", "--import-realm" ]
+    environment:
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: admin
+      DB_VENDOR: postgres
+      DB_ADDR: keycloak-db
+      DB_DATABASE: keycloak
+      DB_USER: keycloak
+      DB_PASSWORD: password
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./realms/:/opt/keycloak/data/import/
+    depends_on:
+      - keycloak-db
+
+  ## Kafka Config with Zookeeper
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     container_name: zookeeper
@@ -8,7 +91,7 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
-  kafka:
+  broker:
     image: confluentinc/cp-kafka:latest
     container_name: broker
     ports:
@@ -24,3 +107,98 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
 
+  ## Zipkin
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+
+  ## Eureka Server
+  discovery-server:
+    image: noahtenoever/discovery-server:latest
+    container_name: discovery-server
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - zipkin
+
+  api-gateway:
+    image: noahtenoever/api-gateway:latest
+    container_name: api-gateway
+    ports:
+      - "8181:8080"
+    expose:
+      - "8181"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY= TRACE
+    depends_on:
+      - zipkin
+      - discovery-server
+      - keycloak
+
+  ## Microservices
+  ## Replay-Service Docker Compose Config
+  replay-service:
+    container_name: replay-service
+    image: noahtenoever/replay-service:latest
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - mongo-replay
+      - discovery-server
+      - api-gateway
+      - zipkin
+
+  ## Upload-Service Docker Compose Config
+  upload-service:
+    container_name: upload-service
+    image: noahtenoever/upload-service:latest
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - discovery-server
+      - api-gateway
+      - replay-service
+      - zipkin
+      - broker
+
+  ## Game-Service Docker Compose Config
+  game-service:
+    container_name: game-service
+    image: noahtenoever/game-service:latest
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-order:5431/game-service
+    depends_on:
+      - postgres-game
+      - broker
+      - zipkin
+      - discovery-server
+      - api-gateway
+
+  ## Profile-Service Docker Compose Config
+  profile-service:
+    container_name: profile-service
+    image: noahtenoever/profile-service:latest
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - mongo-profile
+      - discovery-server
+      - api-gateway
+
+  ## Product-Service Docker Compose Config
+  subscription-service:
+    container_name: subscription-service
+    image: noahtenoever/subscription-service:latest
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - mongo-subscription
+      - discovery-server
+      - api-gateway
+      - broker
