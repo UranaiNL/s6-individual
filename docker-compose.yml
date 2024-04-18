@@ -1,10 +1,10 @@
-version: '3.7'
+version: '3'
 
 services:
   ## MySQL Docker Compose Config
   postgres-game:
     container_name: postgres-game
-    image: postgres
+    image: postgres:latest
     environment:
       POSTGRES_DB: game-service
       POSTGRES_USER: uranai
@@ -57,6 +57,7 @@ services:
   ## MySQL Docker Compose Config
   keycloak-db:
     image: postgres
+    container_name: keycloak-db
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak
@@ -83,29 +84,13 @@ services:
     depends_on:
       - keycloak-db
 
-  ## Kafka Config with Zookeeper
-  zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-    container_name: zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-
-  broker:
-    image: confluentinc/cp-kafka:latest
-    container_name: broker
+  ## RabbitMQ Setup
+  rabbitmq:
+    image: rabbitmq:latest
+    container_name: rabbitmq
     ports:
-      - "9092:9092"
-    depends_on:
-      - zookeeper
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://broker:29092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      - "5672:5672"
+      - "15672:15672"  # Optional: Management UI
 
   ## Zipkin
   zipkin:
@@ -165,7 +150,7 @@ services:
       - api-gateway
       - replay-service
       - zipkin
-      - broker
+      - rabbitmq
 
   ## Game-Service Docker Compose Config
   game-service:
@@ -173,10 +158,9 @@ services:
     image: noahtenoever/game-service:latest
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-order:5431/game-service
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-game:5431/game-service
     depends_on:
       - postgres-game
-      - broker
       - zipkin
       - discovery-server
       - api-gateway
@@ -202,4 +186,4 @@ services:
       - mongo-subscription
       - discovery-server
       - api-gateway
-      - broker
+      - rabbitmq
