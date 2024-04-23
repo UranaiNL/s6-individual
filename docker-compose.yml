@@ -145,6 +145,8 @@ services:
     image: noahtenoever/upload-service:latest
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - PROJECT_ID=re-play-420511
+      - BUCKET_NAME=replay_upload_database
     depends_on:
       - discovery-server
       - api-gateway
