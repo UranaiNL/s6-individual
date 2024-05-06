@@ -36,12 +36,15 @@ build/
 my-sql-data
 mongo-data
 /mysql_keycloak_data/
+/mongo-profile-data/
+/mongo-replay-data/
+/mongo-subscription-data/
+/postgres_keycloak_data/
+/postgres-game/
 /postgres/
-/postgres-inventory/
-/postgres-order/
 /grafana/
 
-### Ignoring the modules ###
+### Ignoring the different modules###
 .idea/
 api-gateway/
 discovery-server/
@@ -49,11 +52,8 @@ game-service/
 profile-service/
 replay-service/
 subscription-service/
-upload-service
+upload-service/
+replay-frontend/
 
-## Ignoring the databases
-/mongo-profile-data/
-/mongo-replay-data/
-/mongo-subscription-data/
-/postgres_keycloak_data/
-/postgres-game/
+
+
