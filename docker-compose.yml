@@ -2,46 +2,34 @@ version: '3'
 
 services:
   ## MySQL Docker Compose Config
-  postgres-game:
-    container_name: postgres-game
-    image: postgres:latest
-    environment:
-      POSTGRES_DB: game-service
-      POSTGRES_USER: uranai
-      POSTGRES_PASSWORD: password
-      PGDATA: /data/postgres
-    volumes:
-      - ./postgres-game:/data/postgres
-    expose:
-      - "5431"
-    ports:
-      - "5431:5431"
-    command: -p 5431
-    restart: always
+#  postgres-game:
+#    container_name: postgres-game
+#    image: postgres:latest
+#    environment:
+#      POSTGRES_DB: game-service
+#      POSTGRES_USER: uranai
+#      POSTGRES_PASSWORD: password
+#      PGDATA: /data/postgres
+#    volumes:
+#      - ./postgres-game:/data/postgres
+#    expose:
+#      - "5431"
+#    ports:
+#      - "5431:5431"
+#    command: -p 5431
+#    restart: always
 
-  ## Mongo Docker Compose Config
-  mongo-replay:
-    container_name: mongo-replay
-    image: mongo:4.4.14-rc0-focal
-    restart: always
-    ports:
-      - "27017:27017"
-    expose:
-      - "27017"
-    volumes:
-      - ./mongo-replay-data:/data/db
-
-  mongo-profile:
-    container_name: mongo-profile
-    image: mongo:4.4.14-rc0-focal
-    restart: always
-    ports:
-      - "27018:27017"
-    expose:
-      - "27017"
-    volumes:
-      - ./mongo-profile-data:/data/db
-
+#  mongo-profile:
+#    container_name: mongo-profile
+#    image: mongo:4.4.14-rc0-focal
+#    restart: always
+#    ports:
+#      - "27018:27017"
+#    expose:
+#      - "27017"
+#    volumes:
+#      - ./mongo-profile-data:/data/db
+#
   mongo-subscription:
     container_name: mongo-subscription
     image: mongo:4.4.14-rc0-focal
@@ -91,6 +79,9 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"  # Optional: Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
 
   ## Zipkin
   zipkin:
@@ -132,12 +123,12 @@ services:
     image: noahtenoever/replay-service:latest
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-      - MONGO_URL=mongodb://mongo-replay:27017/replay-service
     depends_on:
-      - mongo-replay
       - discovery-server
       - api-gateway
       - zipkin
+      - rabbitmq
+      - upload-service
 
   ## Upload-Service Docker Compose Config
   upload-service:
@@ -150,33 +141,32 @@ services:
     depends_on:
       - discovery-server
       - api-gateway
-      - replay-service
       - zipkin
       - rabbitmq
 
-  ## Game-Service Docker Compose Config
-  game-service:
-    container_name: game-service
-    image: noahtenoever/game-service:latest
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-game:5431/game-service
-    depends_on:
-      - postgres-game
-      - zipkin
-      - discovery-server
-      - api-gateway
-
-  ## Profile-Service Docker Compose Config
-  profile-service:
-    container_name: profile-service
-    image: noahtenoever/profile-service:latest
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-    depends_on:
-      - mongo-profile
-      - discovery-server
-      - api-gateway
+#  ## Game-Service Docker Compose Config
+#  game-service:
+#    container_name: game-service
+#    image: noahtenoever/game-service:latest
+#    environment:
+#      - SPRING_PROFILES_ACTIVE=docker
+#      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-game:5431/game-service
+#    depends_on:
+#      - postgres-game
+#      - zipkin
+#      - discovery-server
+#      - api-gateway
+#
+#  ## Profile-Service Docker Compose Config
+#  profile-service:
+#    container_name: profile-service
+#    image: noahtenoever/profile-service:latest
+#    environment:
+#      - SPRING_PROFILES_ACTIVE=docker
+#    depends_on:
+#      - mongo-profile
+#      - discovery-server
+#      - api-gateway
 
   ## Product-Service Docker Compose Config
   subscription-service:

@@ -15,8 +15,9 @@ spec:
         app: replay-service
     spec:
       containers:
-        - name: upload-service
-          image: gcr.io/re-play-420511/replay-service@sha256:77023cdacf9915f61e801c88eae2074bd38342c8b78fd1e00481058cdfa170c2
+        - name: replay-service
+          image: noahtenoever/replay-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8082
           resources:
@@ -47,7 +48,7 @@ kind: Service
 metadata:
   name: replay-service
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
     - port: 8082
       targetPort: 8082

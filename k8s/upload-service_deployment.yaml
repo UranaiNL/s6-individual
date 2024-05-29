@@ -16,7 +16,8 @@ spec:
     spec:
       containers:
         - name: upload-service
-          image: gcr.io/re-play-420511/upload-service:1261b2477b99b3ee246c0fb30616c0ee29031a25
+          image: noahtenoever/upload-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8081
           resources:

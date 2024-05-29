@@ -16,9 +16,10 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: gcr.io/re-play-420511/api-gateway:96420b1b63d1393c753fcb8991ef3ac6002446c5
+          image: noahtenoever/api-gateway:latest
+          imagePullPolicy: Always
           ports:
-            - containerPort: 8080
+            - containerPort: 8181
           resources:
             requests:
               memory: "256Mi"
@@ -51,7 +52,7 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-    - port: 8080
-      targetPort: 8080
+    - port: 8181
+      targetPort: 8181
   selector:
     app: api-gateway

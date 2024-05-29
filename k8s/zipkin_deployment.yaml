@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zipkin-dep
+spec:
+  selector:
+    matchLabels:
+      app: zipkin
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: zipkin
+    spec:
+      containers:
+        - name: zipkin
+          resources:
+            limits:
+              ephemeral-storage: 1Gi
+            requests:
+              ephemeral-storage: 500Mi
+          image: openzipkin/zipkin:latest
+          ports:
+            - containerPort: 9411
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zipkin
+  labels:
+    app: zipkin
+spec:
+  selector:
+    app: zipkin
+  type: NodePort
+  ports:
+    - port: 9411
+      nodePort: 30411
