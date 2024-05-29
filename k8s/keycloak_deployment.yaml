@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  labels:
+    app: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      initContainers:
+        - name: import-realm
+          image: busybox
+          command: ['sh', '-c', 'cp /realm-settings/realm-export.json /opt/jboss/keycloak/realm-import/realm-export.json']
+          volumeMounts:
+            - name: realm-settings
+              mountPath: /realm-settings
+            - name: realm-import
+              mountPath: /opt/jboss/keycloak/realm-import
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:24.0.2
+          ports:
+            - containerPort: 8080
+          env:
+            - name: KEYCLOAK_USER
+              value: admin
+            - name: KEYCLOAK_PASSWORD
+              value: admin
+            - name: DB_VENDOR
+              value: POSTGRES
+            - name: DB_ADDR
+              value: postgres
+            - name: DB_DATABASE
+              value: keycloak
+            - name: DB_USER
+              value: keycloak
+            - name: DB_PASSWORD
+              value: password
+            - name: KEYCLOAK_IMPORT
+              value: /opt/jboss/keycloak/realm-import/realm-export.json
+          volumeMounts:
+            - name: realm-import
+              mountPath: /opt/jboss/keycloak/realm-import
+      volumes:
+        - name: realm-settings
+          configMap:
+            name: realm-settings-configmap
+        - name: realm-import
+          emptyDir: {}
