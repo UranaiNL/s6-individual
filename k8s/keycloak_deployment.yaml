@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: keycloak
-  labels:
-    app: keycloak
 spec:
   replicas: 1
   selector:
@@ -14,43 +12,39 @@ spec:
       labels:
         app: keycloak
     spec:
-      initContainers:
-        - name: import-realm
-          image: busybox
-          command: ['sh', '-c', 'cp /realm-settings/realm-export.json /opt/jboss/keycloak/realm-import/realm-export.json']
-          volumeMounts:
-            - name: realm-settings
-              mountPath: /realm-settings
-            - name: realm-import
-              mountPath: /opt/jboss/keycloak/realm-import
       containers:
         - name: keycloak
-          image: quay.io/keycloak/keycloak:24.0.2
-          ports:
-            - containerPort: 8080
+          image: quay.io/keycloak/keycloak:latest
+          args: ["start-dev"]
           env:
+            - name: KEYCLOAK_ADMIN
+              value: admin
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: admin
             - name: KEYCLOAK_USER
-              value: admin
+              value: user
             - name: KEYCLOAK_PASSWORD
-              value: admin
+              value: user
             - name: DB_VENDOR
-              value: POSTGRES
-            - name: DB_ADDR
-              value: postgres
-            - name: DB_DATABASE
-              value: keycloak
-            - name: DB_USER
-              value: keycloak
-            - name: DB_PASSWORD
-              value: password
+              value: h2
             - name: KEYCLOAK_IMPORT
-              value: /opt/jboss/keycloak/realm-import/realm-export.json
+              value: /config/realm-export.json
           volumeMounts:
-            - name: realm-import
-              mountPath: /opt/jboss/keycloak/realm-import
+            - name: realm-config
+              mountPath: /config
       volumes:
-        - name: realm-settings
+        - name: realm-config
           configMap:
-            name: realm-settings-configmap
-        - name: realm-import
-          emptyDir: {}
+            name: keycloak-realm-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: keycloak
+  type: LoadBalancer

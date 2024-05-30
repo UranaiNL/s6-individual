@@ -1,49 +1,45 @@
-apiVersion: v1
-kind: Service
-metadata:
-  name: postgres
-spec:
-  ports:
-    - port: 5432
-  selector:
-    app: postgres
-  clusterIP: None
----
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: postgres
+  name: postgresql-db
 spec:
+  serviceName: postgresql-db-service
   selector:
     matchLabels:
-      app: postgres
-  serviceName: "postgres"
+      app: postgresql-db
   replicas: 1
   template:
     metadata:
       labels:
-        app: postgres
+        app: postgresql-db
     spec:
       containers:
-        - name: postgres
-          image: postgres:13
-          ports:
-            - containerPort: 5432
+        - name: postgresql-db
+          image: postgres:15
+          volumeMounts:
+            - mountPath: /data
+              name: cache-volume
           env:
-            - name: POSTGRES_DB
-              value: keycloak
             - name: POSTGRES_USER
               value: keycloak
             - name: POSTGRES_PASSWORD
               value: password
-          volumeMounts:
-            - name: postgres-storage
-              mountPath: /var/lib/postgresql/data
-  volumeClaimTemplates:
-    - metadata:
-        name: postgres-storage
-      spec:
-        accessModes: [ "ReadWriteOnce" ]
-        resources:
-          requests:
-            storage: 1Gi
+            - name: PGDATA
+              value: /data/pgdata
+            - name: POSTGRES_DB
+              value: keycloak
+      volumes:
+        - name: cache-volume
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-db
+spec:
+  selector:
+    app: postgresql-db
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
