@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: rabbitmq
+  labels:
+    app: rabbitmq
 spec:
   replicas: 1
   selector:
@@ -12,60 +14,36 @@ spec:
       labels:
         app: rabbitmq
     spec:
-      nodeSelector:
-        "kubernetes.io/os": linux
       containers:
         - name: rabbitmq
-          image: mcr.microsoft.com/mirror/docker/library/rabbitmq:3.10-management-alpine
+          image: rabbitmq:3.13-management-alpine
+          env:
+            - name: RABBITMQ_DEFAULT_PASS
+              value: guest
+            - name: RABBITMQ_DEFAULT_USER
+              value: guest
           ports:
             - containerPort: 5672
-              name: rabbitmq-amqp
+              hostPort: 5672
+              protocol: TCP
             - containerPort: 15672
-              name: rabbitmq-http
-          env:
-            - name: RABBITMQ_DEFAULT_USER
-              value: "guest"
-            - name: RABBITMQ_DEFAULT_PASS
-              value: "guest"
-          resources:
-            requests:
-              cpu: 10m
-              memory: 128Mi
-            limits:
-              cpu: 250m
-              memory: 256Mi
-          volumeMounts:
-            - name: rabbitmq-enabled-plugins
-              mountPath: /etc/rabbitmq/enabled_plugins
-              subPath: enabled_plugins
-      volumes:
-        - name: rabbitmq-enabled-plugins
-          configMap:
-            name: rabbitmq-enabled-plugins
-            items:
-              - key: rabbitmq_enabled_plugins
-                path: enabled_plugins
----
-apiVersion: v1
-data:
-  rabbitmq_enabled_plugins: |
-    [rabbitmq_management,rabbitmq_prometheus,rabbitmq_amqp1_0].
-kind: ConfigMap
-metadata:
-  name: rabbitmq-enabled-plugins
+              hostPort: 15672
+              protocol: TCP
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: rabbitmq
-spec:
-  selector:
+  labels:
     app: rabbitmq
+spec:
   ports:
-    - name: rabbitmq-amqp
+    - name: "5672"
       port: 5672
       targetPort: 5672
-    - name: rabbitmq-http
+    - name: "15672"
       port: 15672
       targetPort: 15672
-  type: ClusterIP
+  selector:
+    app: rabbitmq
