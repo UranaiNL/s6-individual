@@ -1,0 +1,23 @@
+global:
+  scrape_interval:     10s
+  evaluation_interval: 10s
+
+scrape_configs:
+  - job_name: 'replay-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['replay-service:8082']
+        labels:
+          application: 'Replay Service Application'
+  - job_name: 'upload_service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['upload-service:8081']
+        labels:
+          application: 'Upload Service Application'
+  - job_name: 'subscription_service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['subscription-service:8083']
+        labels:
+          application: 'Subscription Service Application'
