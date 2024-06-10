@@ -121,6 +121,8 @@ services:
   replay-service:
     container_name: replay-service
     image: noahtenoever/replay-service:latest
+    ports:
+      - "8082:8082"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
@@ -134,6 +136,8 @@ services:
   upload-service:
     container_name: upload-service
     image: noahtenoever/upload-service:latest
+    ports:
+      - "8081:8081"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - PROJECT_ID=re-play-420511
@@ -172,6 +176,8 @@ services:
   subscription-service:
     container_name: subscription-service
     image: noahtenoever/subscription-service:latest
+    ports:
+      - "8083:8083"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
@@ -179,3 +185,31 @@ services:
       - discovery-server
       - api-gateway
       - rabbitmq
+
+  ## Prometheus
+  prometheus:
+    image: prom/prometheus:v2.45.1
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - subscription-service
+      - replay-service
+      - upload-service
+
+  grafana:
+    image: grafana/grafana-oss:8.5.2
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    links:
+      - prometheus:prometheus
+    volumes:
+      - ./grafana:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=password
