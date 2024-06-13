@@ -62,6 +62,13 @@ spec:
           volumeMounts:
             - mountPath: /var/lib/grafana
               name: grafana-pv
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              value: admin
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              value: password
+            - name: GF_SERVER_ROOT_URL
+              value: "http://api-gateway:8181/grafana/"
       volumes:
         - name: grafana-pv
           persistentVolumeClaim:
@@ -78,4 +85,4 @@ spec:
       targetPort: 3000
   selector:
     app: grafana
-  type: LoadBalancer
+  type: ClusterIP

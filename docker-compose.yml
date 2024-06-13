@@ -142,6 +142,8 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
       - PROJECT_ID=re-play-420511
       - BUCKET_NAME=replay_upload_database
+    volumes:
+      - ./upload-service/src/main/resources/gkey.json:/app/resources/gkey.json
     depends_on:
       - discovery-server
       - api-gateway
@@ -213,3 +215,4 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=password
+      - GF_SERVER_ROOT_URL=http://api-gateway:8080/grafana/
